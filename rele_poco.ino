@@ -62,8 +62,6 @@ void loop () {
     }
 
     delay(600000); //20 minutes
-
-    char key_pressed = keyboard.getKey();
 }
 
 void showInfos() {
@@ -89,4 +87,9 @@ void showInfos() {
   Serial.print("Battery voltage: ");
   Serial.print(analogRead(33) * 3.3 / 4096);
   Serial.println();
+
+  if (key_pressed) {
+    Serial.print("Key pressed: ")
+    Serial.println(keyboard.getKey());
+  }
 }
