@@ -61,7 +61,7 @@ void loop () {
       digitalWrite(LED, HIGH);
     }
 
-    delay(1200000); //20 minutes
+    delay(600000); //20 minutes
 
     char key_pressed = keyboard.getKey();
 }
