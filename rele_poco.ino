@@ -1,4 +1,26 @@
 #include "RTClib.h"
+#include <Keypad.h>
+
+const byte LINES = 4;
+const byte COLUMNS = 4;
+
+char KEYS_MATRIZ[LINES][COLUMNS] = {
+  {'1', '2', '3', 'A'},
+  {'4', '5', '6', 'B'},
+  {'7', '8', '9', 'C'},
+  {'*', '0', '#', 'D'}
+};
+
+byte PIN_LINES[LINES] = {18, 19, 21, 22};
+byte PIN_COLUMNS[COLUMNS] = {26, 27, 32, 33};
+
+Keypad keyboard = Keypad(
+  makeKeymap(KEYS_MATRIZ),
+  PIN_LINES,
+  PIN_COLUMNS,
+  LINES,
+  COLUMNS
+);
 
 RTC_Millis rtc;
 
@@ -7,7 +29,7 @@ char days[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Fri
 int RELE = 27;
 int LED = 2;
 int start_operation = 9;
-int end_operation = 15;
+int end_operation = 16;
 
 void setup () {
     Serial.begin(57600);
@@ -28,7 +50,7 @@ void loop () {
     
     int HOUR = now.hour();
     boolean isDay = now.dayOfTheWeek()%2 != 0;
-    if (isDay && HOUR > start_operation && HOUR < end_operation) {
+    if (start_operation && HOUR < end_operation) {
       digitalWrite(RELE, HIGH);
     } else {
       digitalWrite(RELE, LOW);
@@ -40,6 +62,8 @@ void loop () {
     }
 
     delay(1200000); //20 minutes
+
+    char key_pressed = keyboard.getKey();
 }
 
 void showInfos() {
