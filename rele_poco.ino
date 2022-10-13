@@ -1,5 +1,9 @@
 #include "RTClib.h"
 #include <Keypad.h>
+#include <LiquidCrystal_I2C.h>
+
+int lcdColumns = 16;
+int lcdRows = 2;
 
 const byte LINES = 4;
 const byte COLUMNS = 4;
@@ -22,6 +26,7 @@ Keypad keyboard = Keypad(
   COLUMNS
 );
 
+//RTC_DS3231 rtc;
 RTC_Millis rtc;
 
 char days[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
@@ -31,15 +36,23 @@ int LED = 2;
 int start_operation = 9;
 int end_operation = 16;
 
+LiquidCrystal_I2C lcd(0x27, lcdColumns, lcdRows);
+
 void setup () {
     Serial.begin(57600);
     pinMode(RELE, OUTPUT);
     pinMode(LED, OUTPUT);
 
-#ifndef ESP8266
-    while (!Serial);
-#endif
+    lcd.init();                    
+    lcd.backlight();
 
+    #ifndef ESP8266
+        while (!Serial);
+    #endif
+
+    //for rtc 3231
+    //rtc.begin();
+    //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
     rtc.begin(DateTime(F(__DATE__), F(__TIME__)));
 
     showInfos();
@@ -47,6 +60,14 @@ void setup () {
 
 void loop () {
     DateTime now = rtc.now();
+
+    setupLCD(now);
+
+    //only work when delete delay
+    char key_pressed = keyboard.getKey();
+    if (key_pressed) {
+      Serial.println(key_pressed);
+    }
     
     int HOUR = now.hour();
     boolean isDay = now.dayOfTheWeek()%2 != 0;
@@ -61,7 +82,30 @@ void loop () {
       digitalWrite(LED, HIGH);
     }
 
-    delay(600000); //20 minutes
+    delay(600000); //10 minutes
+}
+
+void setupLCD(DateTime now) {
+  lcd.clear();
+
+
+  lcd.setCursor(0, 0);
+  lcd.print(now.hour());
+  lcd.print(":");
+  lcd.print(now.minute());
+  lcd.print(":");
+  lcd.print(now.second());
+  lcd.print(" ");
+  lcd.print(" ");
+  lcd.print(" ");
+  lcd.print(analogRead(33) * 3.3 / 4096);
+  
+  lcd.setCursor(0,1);
+  lcd.print(now.day());
+  lcd.print("/");
+  lcd.print(now.month());
+  lcd.print("/");
+  lcd.print(now.year());
 }
 
 void showInfos() {
@@ -72,6 +116,8 @@ void showInfos() {
   Serial.print(now.hour());
   Serial.print(":");
   Serial.print(now.minute());
+  Serial.print(":");
+  Serial.print(now.second());
   Serial.println();
   Serial.print("Today is: ");
   Serial.print(now.day());
@@ -87,9 +133,4 @@ void showInfos() {
   Serial.print("Battery voltage: ");
   Serial.print(analogRead(33) * 3.3 / 4096);
   Serial.println();
-
-  if (key_pressed) {
-    Serial.print("Key pressed: ")
-    Serial.println(keyboard.getKey());
-  }
 }
