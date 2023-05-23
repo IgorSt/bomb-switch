@@ -1,136 +1,63 @@
-#include "RTClib.h"
-#include <Keypad.h>
-#include <LiquidCrystal_I2C.h>
 
-int lcdColumns = 16;
-int lcdRows = 2;
+#include <Wire.h> 
+#include <RtcDS1307.h>
 
-const byte LINES = 4;
-const byte COLUMNS = 4;
+RtcDS1307<TwoWire> rtc(Wire);
 
-char KEYS_MATRIZ[LINES][COLUMNS] = {
-  {'1', '2', '3', 'A'},
-  {'4', '5', '6', 'B'},
-  {'7', '8', '9', 'C'},
-  {'*', '0', '#', 'D'}
-};
+int RELE = 14;
 
-byte PIN_LINES[LINES] = {18, 19, 21, 22};
-byte PIN_COLUMNS[COLUMNS] = {26, 27, 32, 33};
-
-Keypad keyboard = Keypad(
-  makeKeymap(KEYS_MATRIZ),
-  PIN_LINES,
-  PIN_COLUMNS,
-  LINES,
-  COLUMNS
-);
-
-//RTC_DS3231 rtc;
-RTC_Millis rtc;
-
-char days[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
-
-int RELE = 27;
-int LED = 2;
-int start_operation = 9;
+int start_operation = 8;
 int end_operation = 16;
 
-LiquidCrystal_I2C lcd(0x27, lcdColumns, lcdRows);
-
-void setup () {
-    Serial.begin(57600);
-    pinMode(RELE, OUTPUT);
-    pinMode(LED, OUTPUT);
-
-    lcd.init();                    
-    lcd.backlight();
-
-    #ifndef ESP8266
-        while (!Serial);
-    #endif
-
-    //for rtc 3231
-    //rtc.begin();
-    //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-    rtc.begin(DateTime(F(__DATE__), F(__TIME__)));
-
-    showInfos();
-}
-
-void loop () {
-    DateTime now = rtc.now();
-
-    setupLCD(now);
-
-    //only work when delete delay
-    char key_pressed = keyboard.getKey();
-    if (key_pressed) {
-      Serial.println(key_pressed);
-    }
-    
-    int HOUR = now.hour();
-    boolean isDay = now.dayOfTheWeek()%2 != 0;
-    if (start_operation && HOUR < end_operation) {
-      digitalWrite(RELE, HIGH);
-    } else {
-      digitalWrite(RELE, LOW);
-    }
-
-    float voltageBattery = (analogRead(33) * 3.3 / 4096);
-    if(voltageBattery < 1.5) {
-      digitalWrite(LED, HIGH);
-    }
-
-    delay(600000); //10 minutes
-}
-
-void setupLCD(DateTime now) {
-  lcd.clear();
-
-
-  lcd.setCursor(0, 0);
-  lcd.print(now.hour());
-  lcd.print(":");
-  lcd.print(now.minute());
-  lcd.print(":");
-  lcd.print(now.second());
-  lcd.print(" ");
-  lcd.print(" ");
-  lcd.print(" ");
-  lcd.print(analogRead(33) * 3.3 / 4096);
+void setup(){
   
-  lcd.setCursor(0,1);
-  lcd.print(now.day());
-  lcd.print("/");
-  lcd.print(now.month());
-  lcd.print("/");
-  lcd.print(now.year());
+  Serial.begin(9600);
+
+  rtc.Begin();
+
+  //RtcDateTime tempoatual = RtcDateTime(__DATE__,__TIME__); 
+  //rtc.SetDateTime(tempoatual);
+
+  pinMode(RELE, OUTPUT);
+  digitalWrite(RELE, HIGH);
 }
 
-void showInfos() {
-  DateTime now = rtc.now();
 
-  // Show time
-  Serial.print("Now is: ");
-  Serial.print(now.hour());
-  Serial.print(":");
-  Serial.print(now.minute());
-  Serial.print(":");
-  Serial.print(now.second());
-  Serial.println();
-  Serial.print("Today is: ");
-  Serial.print(now.day());
+void loop(){
+
+  RtcDateTime instante = rtc.GetDateTime();
+
+  // somente dias pares
+  //boolean isDay = instante.DayOfWeek() % 2 != 0;
+  
+  // somente segunda e quinta
+  boolean isDay = instante.DayOfWeek() == 1 || instante.DayOfWeek() == 4;
+  if (
+    instante.Hour() >= start_operation &&
+    instante.Hour() < end_operation &&
+    isDay
+    ) {
+    Serial.println("Rele Ligado");
+    digitalWrite(RELE, LOW);
+  } else {
+    Serial.println("Rele Desligado");
+    digitalWrite(RELE, HIGH);
+  }
+
+  Serial.print(instante.Day());  
   Serial.print("/");
-  Serial.print(now.month());
+  Serial.print(instante.Month());
+  Serial.print("/");
+  Serial.print(instante.Year()); 
   Serial.print(" - ");
-  Serial.print(days[now.dayOfTheWeek()]);
+  Serial.print(instante.DayOfWeek());  
   Serial.print(" - ");
-  Serial.print(now.dayOfTheWeek());
-  Serial.println();
+  Serial.print(instante.Hour());  
+  Serial.print(":");
+  Serial.print(instante.Minute());
+  Serial.print(":");
+  Serial.print(instante.Second());
+  Serial.println("");
 
-  //Show Battery voltage
-  Serial.print("Battery voltage: ");
-  Serial.print(analogRead(33) * 3.3 / 4096);
-  Serial.println();
+  delay(1000);
 }
