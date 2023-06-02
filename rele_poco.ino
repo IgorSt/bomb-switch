@@ -30,8 +30,17 @@ void loop(){
   // somente dias pares
   //boolean isDay = instante.DayOfWeek() % 2 != 0;
   
-  // somente segunda e quinta
-  boolean isDay = instante.DayOfWeek() == 1 || instante.DayOfWeek() == 4;
+  /*
+  0 - Dom
+  1 - Seg
+  2 - Ter
+  3 - Qua
+  4 - Qui
+  5 - Sex
+  6 - Sab
+  */
+
+  boolean isDay = instante.DayOfWeek() == 1 || instante.DayOfWeek() == 3 || instante.DayOfWeek() == 5;
   if (
     instante.Hour() >= start_operation &&
     instante.Hour() < end_operation &&
